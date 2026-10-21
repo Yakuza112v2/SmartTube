@@ -51,7 +51,7 @@ android {
     buildToolsVersion project.properties.buildToolsVersion
     testOptions.unitTests.includeAndroidResources = true
     ndkVersion "21.0.6113669" // reduce size of the *.so files (stripping debug symbols)
-    
+
     defaultConfig {
         // values linked with applicationId: searchable.searchSuggestAuthority, searchable.searchSuggestIntentData, VideoContract.CONTENT_AUTHORITY
         applicationId "app.smarttube"
@@ -91,6 +91,7 @@ android {
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {
+                storeType = keystoreProperties['storeType'] ?: 'JKS'
                 storeFile = file(keystoreProperties['storeFile'])
                 storePassword = keystoreProperties['storePassword']
                 keyAlias = keystoreProperties['keyAlias']
@@ -98,7 +99,7 @@ android {
             }
         }
     }
-    
+
     buildTypes {
         release {
             // Enable minification
@@ -159,6 +160,13 @@ android {
 
     // NOTE: The main goal of prefixing a flavor is to group flavors' folders together
     productFlavors {
+        stpersonal {
+            applicationId "org.smarttube.personal"
+            targetSdkVersion project.properties.compileSdkVersion
+            matchingFallbacks = ['stbeta']
+            versionCode Integer.parseInt(project.findProperty('personalVersionCode') ?: '1')
+            versionName "32.68-personal.${project.findProperty('personalVersionCode') ?: '1'}"
+        }
         stbeta {
             applicationId "org.smarttube.beta"
             targetSdkVersion project.properties.compileSdkVersion

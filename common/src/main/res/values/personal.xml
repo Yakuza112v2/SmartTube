@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="personal_watch_history">false</bool>
+    <string name="updates_managed_externally">Updates are available from the GitHub Releases page of your SmartTube Personal repository.</string>
+</resources>

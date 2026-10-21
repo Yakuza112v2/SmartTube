@@ -132,12 +132,22 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
     public void onViewPaused() {
         super.onViewPaused();
 
+        mHistoryRevisionOnPause = VideoStateService.instance(getContext()).getRevision();
+
         saveSelectedItems();
     }
 
     @Override
     public void onViewResumed() {
         super.onViewResumed();
+
+        long revision = VideoStateService.instance(getContext()).getRevision();
+        if (getContext().getResources().getBoolean(R.bool.personal_watch_history)
+                && revision != mHistoryRevisionOnPause && (isHomeSection() || isSubscriptionsSection())) {
+            mHistoryRevisionOnPause = revision;
+            refresh(false);
+            return;
+        }
 
         refreshIfNeeded();
     }
@@ -149,6 +159,8 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
 
         Utils.testUrl("https://www.youtube.com", () -> refresh(false));
     }
+
+    private long mHistoryRevisionOnPause;
 
     private void saveSelectedItems() {
         // Fix position reset when jumping between sections
@@ -716,7 +728,7 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
             getViewManager().startView(BrowseView.class);
             return;
         }
-        
+
         getView().showProgressBar(true);
 
         VideoGroup firstGroup = VideoGroup.from(section);
@@ -1090,7 +1102,7 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
     public boolean isSubscriptionsSection() {
         return isSection(MediaGroup.TYPE_SUBSCRIPTIONS);
     }
-    
+
     public boolean isPlaybackQueueSection() {
         return isSection(MediaGroup.TYPE_PLAYBACK_QUEUE);
     }

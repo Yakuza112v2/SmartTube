@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="personal_watch_history">true</bool>
+    <string translatable="false" name="app_name">SmartTube Personal</string>
+    <string translatable="false" name="browse_title">SmartTube Personal</string>
+    <!-- Personal builds are distributed through this fork's GitHub Releases. -->
+    <string-array name="update_urls" />
+</resources>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="updates_managed_externally">Updates findest du unter Releases in deinem GitHub-Repository für SmartTube Personal.</string>
+</resources>

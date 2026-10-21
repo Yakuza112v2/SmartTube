@@ -49,6 +49,13 @@ public class AppUpdatePresenter extends BasePresenter<Void> implements AppUpdate
     }
 
     public void start(boolean forceCheck) {
+        if (mUpdateManifestUrls.length == 0) {
+            if (forceCheck) {
+                MessageHelpers.showMessage(getContext(), R.string.updates_managed_externally);
+            }
+            return;
+        }
+
         mIsForceCheck = forceCheck;
 
         if (forceCheck) {

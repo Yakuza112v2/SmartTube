@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.liskovsoft.sharedutils.helpers.Helpers;
+import com.liskovsoft.smartyoutubetv2.common.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.prefs.AppPrefs;
 import com.liskovsoft.smartyoutubetv2.common.prefs.AppPrefs.ProfileChangeListener;
@@ -24,6 +25,8 @@ public class VideoStateService implements ProfileChangeListener {
     //private final Map<String, State> mStates = Helpers.createLRUMap(MAX_PERSISTENT_STATE_SIZE);
     private final List<State> mStates;
     private final AppPrefs mPrefs;
+    private final PersonalHistoryDatabase mDatabase;
+    private long mRevision;
     private static final String DELIM = "&si;";
     private boolean mIsHistoryBroken;
     private final Runnable mPersistStateInt = () -> {
@@ -37,6 +40,8 @@ public class VideoStateService implements ProfileChangeListener {
 
     private VideoStateService(Context context) {
         mPrefs = AppPrefs.instance(context);
+        mDatabase = context.getResources().getBoolean(R.bool.personal_watch_history)
+                ? new PersonalHistoryDatabase(context) : null;
         mPrefs.addListener(this);
         mStates = Helpers.createSafeLRUList(
                 Utils.isEnoughRam() ? HIGH_RAM_STATE_MAX_SIZE : LOW_RAM_STATE_MAX_SIZE);
@@ -70,11 +75,15 @@ public class VideoStateService implements ProfileChangeListener {
             }
         }
 
-        return null;
+        return mDatabase != null ? mDatabase.find(mPrefs.getHistoryProfileKey(), videoId) : null;
     }
 
     public void removeByVideoId(String videoId) {
+        if (mDatabase != null) {
+            mDatabase.remove(mPrefs.getHistoryProfileKey(), videoId);
+        }
         Helpers.removeIf(mStates, state -> Helpers.equals(state.video.videoId, videoId));
+        mRevision++;
         persistState();
     }
 
@@ -83,13 +92,25 @@ public class VideoStateService implements ProfileChangeListener {
     }
 
     public void save(State state) {
+        if (mDatabase != null) {
+            mDatabase.save(mPrefs.getHistoryProfileKey(), state);
+        }
         mStates.add(state);
+        mRevision++;
         persistState();
     }
 
     public void clear() {
+        if (mDatabase != null) {
+            mDatabase.clear(mPrefs.getHistoryProfileKey());
+        }
         mStates.clear();
+        mRevision++;
         persistState();
+    }
+
+    public long getRevision() {
+        return mRevision;
     }
 
     public void setHistoryBroken(boolean isBroken) {
@@ -111,11 +132,21 @@ public class VideoStateService implements ProfileChangeListener {
         String[] split = Helpers.splitData(data);
 
         setStateData(Helpers.parseStr(split, 0));
+        if (mDatabase != null) {
+            String profile = mPrefs.getHistoryProfileKey();
+            mDatabase.importOnce(profile, mStates);
+            mStates.clear();
+            mStates.addAll(mDatabase.recent(profile,
+                    Utils.isEnoughRam() ? HIGH_RAM_STATE_MAX_SIZE : LOW_RAM_STATE_MAX_SIZE));
+        }
         mIsHistoryBroken = Helpers.parseBoolean(split, 1);
         mSessionStartTimeMs = System.currentTimeMillis();
     }
 
     private void persistStateInt() {
+        if (mDatabase != null) {
+            return; // Personal history is committed on each save, independently of app shutdown.
+        }
         if (mIsHistoryBroken) {
             mPrefs.setStateUpdaterData(Helpers.mergeData(getStateData(), mIsHistoryBroken));
         } else {
@@ -139,7 +170,7 @@ public class VideoStateService implements ProfileChangeListener {
         public final long positionMs;
         public final long durationMs;
         public final float speed;
-        public final long timestamp = System.currentTimeMillis();
+        public final long timestamp;
 
         public State(Video video, long positionMs) {
             this(video, positionMs, -1);
@@ -150,10 +181,15 @@ public class VideoStateService implements ProfileChangeListener {
         }
 
         public State(Video video, long positionMs, long durationMs, float speed) {
+            this(video, positionMs, durationMs, speed, System.currentTimeMillis());
+        }
+
+        private State(Video video, long positionMs, long durationMs, float speed, long timestamp) {
             this.video = video;
             this.positionMs = positionMs;
             this.durationMs = durationMs;
             this.speed = speed;
+            this.timestamp = timestamp;
         }
 
         public static State from(String spec) {
@@ -167,6 +203,7 @@ public class VideoStateService implements ProfileChangeListener {
             long positionMs = Helpers.parseLong(split, 1);
             long durationMs = Helpers.parseLong(split, 2);
             float speed = Helpers.parseFloat(split, 3);
+            long timestamp = split.length > 4 ? Helpers.parseLong(split, 4) : System.currentTimeMillis();
 
             Video video = Video.fromString(videoId);
 
@@ -184,13 +221,13 @@ public class VideoStateService implements ProfileChangeListener {
                 video.percentWatched = (positionMs * 100f) / durationMs;
             }
 
-            return new State(video, positionMs, durationMs, speed);
+            return new State(video, positionMs, durationMs, speed, timestamp);
         }
 
         @NonNull
         @Override
         public String toString() {
-            return Helpers.merge(DELIM, video, positionMs, durationMs, speed);
+            return Helpers.merge(DELIM, video, positionMs, durationMs, speed, timestamp);
         }
 
         @Override

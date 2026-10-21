@@ -6,6 +6,7 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaItem;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
+import com.liskovsoft.smartyoutubetv2.common.R;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State;
 import com.liskovsoft.smartyoutubetv2.common.prefs.BlockedChannelData;
@@ -454,7 +455,16 @@ public class VideoGroup {
     }
 
     public void add(int idx, Video video) {
-        if (video == null || video.isEmpty() || isChannelBlocked(video) || isWatchedSuggestion(video)) {
+        if (video == null || video.isEmpty() || isChannelBlocked(video)) {
+            return;
+        }
+
+        boolean personalHistory = GlobalPreferences.context().getResources().getBoolean(R.bool.personal_watch_history);
+        if (personalHistory) {
+            VideoStateService stateService = VideoStateService.instance(GlobalPreferences.context());
+            video.sync(stateService.getByVideoId(video.videoId));
+        }
+        if (isWatchedSuggestion(video)) {
             return;
         }
 
@@ -467,7 +477,7 @@ public class VideoGroup {
         video.setGroup(this);
 
         VideoStateService stateService = VideoStateService.instance(null);
-        if (stateService != null && (video.percentWatched == -1 || video.percentWatched == 100)) {
+        if (!personalHistory && stateService != null && (video.percentWatched == -1 || video.percentWatched == 100)) {
             State state = stateService.getByVideoId(video.videoId);
             video.sync(state);
         }
@@ -499,6 +509,19 @@ public class VideoGroup {
         }
 
         int type = getType();
+
+        if (GlobalPreferences.context().getResources().getBoolean(R.bool.personal_watch_history)) {
+            if (video.isLive || video.isChapter || (type != MediaGroup.TYPE_HOME
+                    && type != MediaGroup.TYPE_SUBSCRIPTIONS && type != MediaGroup.TYPE_SUGGESTIONS)) {
+                return false;
+            }
+            State state = VideoStateService.instance(GlobalPreferences.context()).getByVideoId(video.videoId);
+            if (state != null) {
+                return state.positionMs >= 10_000 || (state.durationMs > 0
+                        && state.positionMs >= state.durationMs * 0.95);
+            }
+            return video.percentWatched > 0;
+        }
 
         if (type != MediaGroup.TYPE_HOME && type != MediaGroup.TYPE_SUGGESTIONS) {
             return false;

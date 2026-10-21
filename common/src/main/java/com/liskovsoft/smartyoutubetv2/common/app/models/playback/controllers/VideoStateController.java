@@ -36,6 +36,15 @@ public class VideoStateController extends BasePlayerController {
     private int mTickleCount;
     private boolean mIncognito;
     private final Runnable mUpdateHistory = this::saveState;
+    private final Runnable mSaveLocalProgress = new Runnable() {
+        @Override
+        public void run() {
+            if (getPlayer() != null && getPlayer().isPlaying() && !isMutedEmbed() && !isBeginEmbed()) {
+                savePosition();
+            }
+            Utils.postDelayed(this, 15_000);
+        }
+    };
     private long mNewVideoTimeMs;
     @Nullable
     private Boolean mIsRestoreActualLive;
@@ -118,6 +127,9 @@ public class VideoStateController extends BasePlayerController {
 
     @Override
     public void onEngineInitialized() {
+        if (isPersonalHistoryEnabled()) {
+            Utils.postDelayed(mSaveLocalProgress, 15_000);
+        }
         // Reset auto-save history timer
         mTickleCount = 0;
 
@@ -131,6 +143,7 @@ public class VideoStateController extends BasePlayerController {
 
     @Override
     public void onEngineReleased() {
+        Utils.removeCallbacks(mSaveLocalProgress);
         if (getPlayer() == null) {
             return;
         }
@@ -247,6 +260,9 @@ public class VideoStateController extends BasePlayerController {
     public void onPause() {
         setPlayEnabled(false);
         showHideScreensaver(true);
+        if (isPersonalHistoryEnabled() && !isMutedEmbed() && !isBeginEmbed()) {
+            savePosition();
+        }
         // throttle seeking calls
         Utils.postDelayed(mUpdateHistory, 10_000);
     }
@@ -524,12 +540,20 @@ public class VideoStateController extends BasePlayerController {
             return;
         }
 
+        if (isPersonalHistoryEnabled() && (mIncognito
+                || getGeneralData().getHistoryState() == GeneralData.HISTORY_DISABLED)) {
+            return;
+        }
+
         // Exceptional cases:
         // 1) Track is ended
         // 2) Pause on end enabled
         // 3) Watching live stream in real time
         long durationMs = getPlayer().getDurationMs();
         long positionMs = getPlayer().getPositionMs();
+        if (isPersonalHistoryEnabled() && (durationMs <= 0 || positionMs < 0)) {
+            return; // Unknown duration is not evidence that a video has ended.
+        }
         long remainsMs = durationMs - positionMs;
         boolean isPositionActual = remainsMs > 1_000;
         boolean isLiveBroken = video.isLive && durationMs <= 30_000; // live without a history
@@ -728,6 +752,10 @@ public class VideoStateController extends BasePlayerController {
             return true;
         }
 
+        if (isPersonalHistoryEnabled()) {
+            return false;
+        }
+
         // Web live position is broken. Ignore it.
         if (item.isLive || item.getPositionMs() <= 0) {
             return false;
@@ -806,5 +834,9 @@ public class VideoStateController extends BasePlayerController {
 
     private boolean isInsideActualLive() {
         return getVideo() != null && getPlayer() != null && getVideo().isLive && (getPlayer().getDurationMs() - getPlayer().getPositionMs() < Math.max(RESTORE_LIVE_BUFFER_MS, getLiveThreshold()));
+    }
+
+    private boolean isPersonalHistoryEnabled() {
+        return getContext() != null && getContext().getResources().getBoolean(R.bool.personal_watch_history);
     }
 }

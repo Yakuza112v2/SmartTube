@@ -84,6 +84,10 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
         return getData(getProfileKey(STATE_UPDATER_DATA, true));
     }
 
+    public String getHistoryProfileKey() {
+        return getProfileKey(STATE_UPDATER_DATA, true);
+    }
+
     public void setStateUpdaterData(String data) {
         // Always use multiple profiles for the history
         setData(getProfileKey(STATE_UPDATER_DATA, true), data);
@@ -200,7 +204,7 @@ public class AppPrefs extends SharedPreferencesBase implements AccountChangeList
 
         return key;
     }
-    
+
     @Override
     protected String getPrefsDir() {
         return PREFS_DIR;
