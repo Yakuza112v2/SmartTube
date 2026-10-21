@@ -65,7 +65,8 @@ Build leer; neue Personal-Versionen werden über die Releases dieses Forks insta
 ## Stand der Überprüfung
 
 Der Quellstand ist SmartTube 32.68 mit den vom Projekt festgelegten Submodulen.
-Ein erfolgreicher GitHub-Build und ein anschließender Test am Fernseher stehen
-noch aus. Der Workflow führt zunächst vier Datenbanktests aus (Neustart, mehr
+Am 21.10.2026 wurden der signierte GitHub-Build, alle vier Datenbanktests und
+die Signaturprüfung erfolgreich abgeschlossen. Der erste Release ist `personal-1`.
+Ein praktischer Test auf dem Fernseher steht noch aus. Der Workflow führt zunächst vier Datenbanktests aus (Neustart, mehr
 als 300 Videos, getrennte Profile und dauerhaftes Löschen). Er prüft vor der Veröffentlichung die APK-Signaturen und
 legt SHA-256-Prüfsummen bei. Eine Signaturprüfung ersetzt keinen Funktionstest.
