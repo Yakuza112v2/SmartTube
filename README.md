@@ -1,3 +1,19 @@
+# SmartTube Personal
+
+Angepasste SmartTube-Version für den Fernseher mit dauerhaftem lokalem Wiedergabefortschritt.
+
+- **[APK herunterladen](https://github.com/Yakuza112v2/SmartTube/releases/latest)** – nach dem ersten erfolgreichen Release unter **Assets** die Datei `SmartTube-Personal-universal.apk` wählen.
+- Fortschritt wird während der Wiedergabe alle 15 Sekunden und beim Pausieren gespeichert.
+- Angefangene Videos ab 10 Sekunden Abspielposition und fast vollständig geschaute Videos werden aus Startseite, Abos und Empfehlungen ausgeblendet. Livestreams bleiben sichtbar.
+- Suche und Verlauf bleiben zum Wiederfinden zugänglich.
+- Die App heißt **SmartTube Personal** und lässt sich zusätzlich zur offiziellen SmartTube-App installieren. Die erste Installation hat eigene App-Daten; eine automatische Übernahme des Verlaufs aus der offiziellen App findet nicht statt.
+
+[Einrichtung und technische Hinweise](PERSONAL_SETUP.md) · [APK-Builds](https://github.com/Yakuza112v2/SmartTube/actions/workflows/personal-release.yml)
+
+---
+
+Die folgende Dokumentation stammt vom ursprünglichen SmartTube-Projekt; dessen Download- und Update-Links führen zur Original-App.
+
 [<img src="images/badge_fdroid.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/app.smarttube.fdroid/)
 [<img src="images/badge_github.png" alt="Get it on GitHub" height="80">](https://github.com/yuliskov/SmartTube/releases)
 
