@@ -44,6 +44,7 @@ jobs:
           done
           umask 077
           printf '%s' "$SIGNING_KEY" | base64 --decode > "$RUNNER_TEMP/personal.jks"
+          keytool -list -storetype PKCS12 -keystore "$RUNNER_TEMP/personal.jks" -storepass:env KEY_STORE_PASSWORD -alias "$ALIAS" > /dev/null
           python3 - <<'PY'
           import os
           def escape(value):
